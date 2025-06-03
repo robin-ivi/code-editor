@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Advanced CodePen Clone</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+    #top-bar {
+      background: #1e1e1e;
+      color: white;
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    button {
+      background-color: #333;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      margin-left: 8px;
+      cursor: pointer;
+    }
+    #container {
+      display: flex;
+      flex-direction: column;
+      height: calc(100% - 48px);
+    }
+    #editors {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    .section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    h2 {
+      background: #2c2c2c;
+      color: #eee;
+      margin: 0;
+      padding: 8px;
+      font-size: 14px;
+      text-align: center;
+    }
+    .editor {
+      flex: 1;
+      min-width: 0;
+      border-right: 1px solid #222;
+    }
+    #preview {
+      flex: 1;
+      border: none;
+      height: 40vh;
+    }
+    .hidden {
+      display: none !important;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs/loader.js"></script>
+</head>
+<body>
+
+  <div id="top-bar">
+    <div><strong>Mini CodePen</strong></div>
+    <div>
+      <button onclick="saveCode()">💾 Save</button>
+      <button onclick="togglePreview()">🖥️ Full Preview</button>
+    </div>
+  </div>
+
+  <div id="container">
+    <div id="editors">
+      <div class="section">
+        <h2>HTML</h2>
+        <div id="html" class="editor"></div>
+      </div>
+      <div class="section">
+        <h2>CSS</h2>
+        <div id="css" class="editor"></div>
+      </div>
+      <div class="section">
+        <h2>JavaScript</h2>
+        <div id="js" class="editor"></div>
+      </div>
+    </div>
+    <iframe id="preview"></iframe>
+  </div>
+
+  <script>
+    require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.34.1/min/vs' } });
+    require(["vs/editor/editor.main"], function () {
+      const defaultCode = {
+        html: "<h1>Hello World!</h1>",
+        css: "body { background: #f0f0f0; font-family: sans-serif; }",
+        js: "console.log('Hello from JS');"
+      };
+
+      const savedCode = JSON.parse(localStorage.getItem("codepen-clone") || "null") || defaultCode;
+
+      const htmlEditor = monaco.editor.create(document.getElementById("html"), {
+        value: savedCode.html,
+        language: "html",
+        theme: "vs-dark",
+        automaticLayout: true
+      });
+
+      const cssEditor = monaco.editor.create(document.getElementById("css"), {
+        value: savedCode.css,
+        language: "css",
+        theme: "vs-dark",
+        automaticLayout: true
+      });
+
+      const jsEditor = monaco.editor.create(document.getElementById("js"), {
+        value: savedCode.js,
+        language: "javascript",
+        theme: "vs-dark",
+        automaticLayout: true
+      });
+
+      function updatePreview() {
+        const html = htmlEditor.getValue();
+        const css = cssEditor.getValue();
+        const js = jsEditor.getValue();
+        const preview = document.getElementById("preview");
+        preview.srcdoc = `
+          <!DOCTYPE html>
+          <html>
+            <head><style>${css}</style></head>
+            <body>
+              ${html}
+              <script>${js}<\/script>
+            </body>
+          </html>
+        `;
+      }
+
+      // Update preview on typing
+      htmlEditor.onDidChangeModelContent(updatePreview);
+      cssEditor.onDidChangeModelContent(updatePreview);
+      jsEditor.onDidChangeModelContent(updatePreview);
+
+      updatePreview();
+
+      // Save function
+      window.saveCode = function () {
+        const data = {
+          html: htmlEditor.getValue(),
+          css: cssEditor.getValue(),
+          js: jsEditor.getValue()
+        };
+        localStorage.setItem("codepen-clone", JSON.stringify(data));
+        alert("💾 Code saved!");
+      };
+
+      // Toggle preview only
+      window.togglePreview = function () {
+        const editors = document.getElementById("editors");
+        editors.classList.toggle("hidden");
+        const preview = document.getElementById("preview");
+        preview.style.height = editors.classList.contains("hidden") ? "100%" : "40vh";
+      };
+    });
+  </script>
+
+</body>
+</html>
